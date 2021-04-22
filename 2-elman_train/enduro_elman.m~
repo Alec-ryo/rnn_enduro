@@ -1,0 +1,79 @@
+% data_path = '/home/ryo/Desktop/tcc/workspace/1-generate/data/match_38/mat/data.mat';
+% 
+% disp('loading data');
+% load(data_path)
+% 
+% X_train = {};
+% for k = 1:num_frames
+%     imageData = reshape(frames(k,:,:), [], 1);
+%     X_train = [X_train, imageData/255];
+% end
+% 
+% containing_actions = sort(unique(actions));
+% containing_actions_size = size(containing_actions);
+% 
+% Y_train = {};
+% for idx = 1:num_frames
+%     one_hot_target = zeros(length(containing_actions), 1);
+%     pos = find(containing_actions == actions(idx));
+%     one_hot_target(pos) = 1;    
+%     Y_train = [Y_train, one_hot_target];
+% end
+
+all_data = {};
+all_targets = {};
+num_hidden_layer = 200;
+
+X_train = {};
+Y_train = {};
+
+for n_seq = 45:50
+    
+    data_path = strcat('/home/ryo/Desktop/tcc/workspace/1-generate/data/match_', string(n_seq),'/mat/data.mat');
+    load(data_path);
+    
+    size_of_frames = size(frames);
+    reshaped_frames = reshape(frames, size_of_frames(2), size_of_frames(1));
+    X_train = [X_train, reshaped_frames/255];
+    
+end
+
+Y_train = {};
+
+containing_actions = sort(unique(actions));
+        containing_actions_size = size(containing_actions);
+one_hot_targets = zeros(length(containing_actions), 6);
+
+for n_seq = 45:50
+    
+    one_hot_targets = zeros(length(containing_actions), 1);
+
+    for images = 1:4500
+
+        containing_actions = sort(unique(actions));
+        containing_actions_size = size(containing_actions);
+
+        pos = find(containing_actions == actions(idx));
+        one_hot_target(pos) = 1;    
+
+    end
+    
+    Y_train = [Y_train, one_hot_target];
+    
+end
+
+disp('training');
+net = train(net, X_train, Y_train);
+
+disp('preparing network');
+net = prepare_net(1, num_hidden_layer);
+view(net);
+
+disp('predicting');
+Y = net(X_train);
+
+plotconfusion(Y_train,Y);
+
+%show_predict_image(data_path, net, match, num_frames);
+
+save('net_model');
