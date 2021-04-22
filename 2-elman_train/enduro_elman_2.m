@@ -1,6 +1,35 @@
+%-------------- Configuracao ---------------%
+mod = false;
+obs = 'play';
+
+num_epochs = 5000;
 num_hidden_layer = 200;
+
 start_match = 45;
-end_match = 46;
+end_match = 45;
+
+start_frame = 1;
+end_frame = 1000;
+
+%----------- Cria nome do modelo -----------%
+if mod
+    model_name = strcat(obs, ...
+                 'M', string(start_match), 'to', string(end_match), ...
+                 'F', string(start_frame), 'to', string(end_frame), ...
+                 'Epoch', string(num_epochs), ...
+                 'H', string(num_hidden_layer), ...
+                 'MOD');
+else
+    model_name = strcat(obs, ...
+                 'M', string(start_match), 'to', string(end_match), ...
+                 'F', string(start_frame), 'to', string(end_frame), ...
+                 'Epoch', string(num_epochs), ...
+                 'H', string(num_hidden_layer) );
+end
+
+disp(model_name);
+
+%----------- Carregamento dos dados -----------%
 
 disp('loading data');
 
@@ -19,13 +48,13 @@ for m = start_match:end_match
     load(data_path);
 
     X_sample = {};
-    for k = 1:1000
+    for k = start_frame:end_frame
         imageData = reshape(frames(k,:,:), [], 1);
         X_sample = [X_sample, imageData/255];
     end
 
     Y_sample = {};
-    for idx = 1:1000
+    for idx = start_frame:end_frame
         one_hot_target = zeros(length(containing_actions), 1);
         pos = find(containing_actions == actions(idx));
         one_hot_target(pos) = 1;    
@@ -43,17 +72,14 @@ for m = start_match:end_match
 end
 
 disp('preparing network');
-useSig = true;
-net = prepare_net(1, num_hidden_layer, useSig);
+net = prepare_net(1, num_hidden_layer, num_epochs, mod);
 
 disp('training');
 net = train(net, X_train, Y_train);
 % net = train(net, X_train, Y_train, ...
 %       'CheckpointFile', 'enduro_elman_epoch5000H200SigSig', ...
 %       'CheckpointDelay', 10);
-  
-% view(net);
-% 
+
 % disp('predicting');
 % Y = net(X_train);
 % 
@@ -61,4 +87,4 @@ net = train(net, X_train, Y_train);
 
 %show_predict_image(data_path, net, match, num_frames);
 
-save( strcat('zigzag_epoch5000H', string(num_hidden_layer), 'SigSig') );
+save(model_name);
