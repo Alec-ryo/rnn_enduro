@@ -3,7 +3,7 @@ mod = false;
 obs = 'play';
 
 num_epochs = 5000;
-num_hidden_layer = 600;
+num_hidden_layer = 500;
 
 start_match = 45;
 end_match = 45;

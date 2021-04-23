@@ -1,5 +1,5 @@
 %-------------- Configuracao ---------------%
-mod = false;
+mod = true;
 obs = 'zigzag';
 
 num_epochs = 5000;

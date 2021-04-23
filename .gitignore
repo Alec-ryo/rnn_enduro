@@ -3,3 +3,4 @@ __pycache__
 net_model.mat
 models
 data
+*.npz
