@@ -44,6 +44,7 @@ else:
 
 ACTIONS_LIST = get_actions_list(zigzag=zigzag)
 
+num_of_frames_arr = []
 frames_arr = []
 actions_arr = []
 
@@ -59,11 +60,12 @@ for m in range(start_match, end_match + 1):
     
     frames_arr.append(frames)
     actions_arr.append(actions)
+    num_of_frames_arr.append(end_frame - start_frame + 1) 
     
-num_of_frames = end_frame - start_frame + 1
 
 X_train = np.array(frames_arr)/255
 Y_train = np.array(actions_arr)
+num_of_frames = np.array(num_of_frames_arr)
 
 X_train = torch.tensor(X_train).float()
 Y_train = torch.tensor(Y_train).float()
@@ -86,10 +88,9 @@ acc_arr = np.array([])
 
 # Training Run
 
-model.train()
-
 epoch = 1
 loss_file = open(newpath + '/' + "loss_file.txt", "w")
+first_time = True
 
 start_time_processing = time.time()
 for epoch in range(1, n_epochs + 1):
@@ -101,7 +102,7 @@ for epoch in range(1, n_epochs + 1):
     optimizer.step() # Updates the weights accordinglyw
     
     if epoch%10 == 0:
-        acc = float((torch.sum((torch.argmax(output, axis=1) == torch.argmax(Y_train.squeeze(), axis=1)).int())/num_of_frames))
+        acc = float(torch.sum((torch.argmax(output, axis=1) == torch.argmax(Y_train.reshape(-1, len(ACTIONS_LIST)), axis=1).int())/num_of_frames.sum()))
         
         loss_file.write("Epoch: {}/{}.............".format(epoch, n_epochs))
         loss_file.write("Loss: {:.15f} Acc: {:.15f}\n".format(loss.item(), acc))
@@ -109,11 +110,14 @@ for epoch in range(1, n_epochs + 1):
         print('Epoch: {}/{}.............'.format(epoch, n_epochs), end=' ')
         print("Loss: {:.15f} Acc: {:.15f}".format(loss.item(), acc))
         
+        if first_time:
+            first_time = False
+        else:
+            if loss.item() < loss_arr[-1]:
+                torch.save(model.state_dict(), newpath + '/' + model_name)
+
         loss_arr = np.append(loss_arr, loss.item())
         acc_arr = np.append(loss_arr, loss.item())
-        
-        if loss.item() < loss_arr[-1]:
-            torch.save(model.state_dict(), newpath + '/' + model_name)
         
         if (acc_arr[-1] - acc > 0.2) or (loss.item() < min_loss):
             break
