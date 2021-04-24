@@ -81,8 +81,8 @@ class Model(nn.Module):
 
         # Initializing hidden state for first input using method defined below
         # hidden = self.init_hidden(batch_size)
-        self.h0 = torch.zeros(self.n_layers, 1, self.hidden_dim).to(self.device)
-        self.c0 = torch.zeros(self.n_layers, 1, self.hidden_dim).to(self.device)
+        self.h0 = torch.zeros(self.n_layers, batch_size, self.hidden_dim).to(self.device)
+        self.c0 = torch.zeros(self.n_layers, batch_size, self.hidden_dim).to(self.device)
 
         # Passing in the input and hidden state into the model and obtaining outputs
         out, hidden = self.lstm(x, (self.h0, self.c0))
