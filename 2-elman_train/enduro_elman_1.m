@@ -1,6 +1,6 @@
 %-------------- Configuracao ---------------%
-mod = true;
-obs = 'zigzag';
+mod = false;
+obs = 'play';
 
 num_epochs = 5000;
 num_hidden_layer = 200;
