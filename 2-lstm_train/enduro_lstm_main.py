@@ -39,7 +39,7 @@ if not os.path.exists(newpath):
 else:
     print(f"models/" + model_name)
     trained = input("ATTENTION! folder not created. Training informations will overwrite the existing one, you want to continue (y/n)")
-    if trained not ('y'):
+    if trained is not('y'):
         exit()
 
 ACTIONS_LIST = get_actions_list(zigzag=zigzag)
