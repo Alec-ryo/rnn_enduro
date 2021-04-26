@@ -3,13 +3,15 @@ mod = false;
 obs = 'play';
 
 num_epochs = 5000;
-num_hidden_layer = 500;
+num_hidden_layer = 200;
 
 start_match = 45;
 end_match = 45;
 
 start_frame = 1;
-end_frame = 1000;
+end_frame = 4500;
+
+use_gpu = true
 
 %----------- Cria nome do modelo -----------%
 if mod
@@ -75,11 +77,16 @@ disp('preparing network');
 net = prepare_net(1, num_hidden_layer, num_epochs, mod);
 
 disp('training');
-net = train(net, X_train, Y_train);
-% net = train(net, X_train, Y_train, ...
-%       'CheckpointFile', 'enduro_elman_epoch5000H200SigSig', ...
-%       'CheckpointDelay', 10);
 
+if use_gpu
+    net = train(net, X_train, Y_train, ...
+        'useGPU', 'yes', ...
+        'showResources','yes', ...
+        'CheckpointFile', 'enduro_elman_1', ...
+        'CheckpointDelay', 10);
+else
+    net = train(net, X_train, Y_train);
+end
 % disp('predicting');
 % Y = net(X_train);
 % 

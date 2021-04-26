@@ -4,3 +4,5 @@ net_model.mat
 models
 data
 *.npz
+adapted_model
+*.mat

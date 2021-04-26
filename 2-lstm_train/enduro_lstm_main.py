@@ -39,7 +39,7 @@ if not os.path.exists(newpath):
 else:
     print(f"models/" + model_name)
     trained = input("ATTENTION! folder not created. Training informations will overwrite the existing one, you want to continue (y/n)")
-    if trained is not('y'):
+    if trained != ('y'):
         exit()
 
 ACTIONS_LIST = get_actions_list(zigzag=zigzag)
@@ -92,6 +92,8 @@ epoch = 1
 loss_file = open(newpath + '/' + "loss_file.txt", "w")
 first_time = True
 
+best_loss = 0
+
 start_time_processing = time.time()
 for epoch in range(1, n_epochs + 1):
     optimizer.zero_grad() # Clears existing gradients from previous epoch
@@ -110,11 +112,11 @@ for epoch in range(1, n_epochs + 1):
         print('Epoch: {}/{}.............'.format(epoch, n_epochs), end=' ')
         print("Loss: {:.15f} Acc: {:.15f}".format(loss.item(), acc))
         
-        if first_time:
-            first_time = False
-        else:
-            if loss.item() < loss_arr[-1]:
-                torch.save(model.state_dict(), newpath + '/' + model_name)
+        if best_loss < loss.item():
+            state = { 'epoch': epoch + 1, 'state_dict': model.state_dict(),
+                      'optimizer': optimizer.state_dict(), 'losslogger': loss.item(), }
+            torch.save(state, filename)
+            best_loss = loss.item()
 
         loss_arr = np.append(loss_arr, loss.item())
         acc_arr = np.append(loss_arr, loss.item())

@@ -7,7 +7,7 @@
 % net = importKerasNetwork(modelfile)
 
 % model_path = 'C:\Users\alece\Desktop\UnB\tcc\matlab\model_matlab\zigzag\net_model.mat';
-model_path = 'models/zigzag_m35_120_epoch5000H200SigSig/zigzag_epoch5000H200SigSig.mat';
+model_path = 'models/playM45to45F1to1000Epoch5000to10000H200/new_model.mat';
 load(model_path);
 Y = net(X_train);
 plotconfusion(Y_train,Y);
