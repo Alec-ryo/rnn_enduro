@@ -115,7 +115,7 @@ for epoch in range(1, n_epochs + 1):
         if best_loss < loss.item():
             state = { 'epoch': epoch + 1, 'state_dict': model.state_dict(),
                       'optimizer': optimizer.state_dict(), 'losslogger': loss.item(), }
-            torch.save(state, filename)
+            torch.save(model.state_dict(), newpath)
             best_loss = loss.item()
 
         loss_arr = np.append(loss_arr, loss.item())
