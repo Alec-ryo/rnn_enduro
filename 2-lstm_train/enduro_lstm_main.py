@@ -92,7 +92,7 @@ epoch = 1
 loss_file = open(newpath + '/' + "loss_file.txt", "w")
 first_time = True
 
-best_loss = 0
+best_loss = 1
 
 start_time_processing = time.time()
 for epoch in range(1, n_epochs + 1):
@@ -112,10 +112,10 @@ for epoch in range(1, n_epochs + 1):
         print('Epoch: {}/{}.............'.format(epoch, n_epochs), end=' ')
         print("Loss: {:.15f} Acc: {:.15f}".format(loss.item(), acc))
         
-        if best_loss < loss.item():
+        if loss.item() < best_loss:
             state = { 'epoch': epoch + 1, 'state_dict': model.state_dict(),
                       'optimizer': optimizer.state_dict(), 'losslogger': loss.item(), }
-            torch.save(model.state_dict(), newpath)
+            torch.save(state, newpath + '/' + model_name)
             best_loss = loss.item()
 
         loss_arr = np.append(loss_arr, loss.item())
