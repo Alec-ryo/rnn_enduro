@@ -140,12 +140,12 @@ for epoch in range(1, n_epochs + 1):
         valid_acc = float(torch.sum((torch.argmax(output, axis=1) == torch.argmax(Y_test.reshape(-1, len(ACTIONS_LIST)), axis=1).int())/num_of_frames.sum()))
         
         loss_file.write("Epoch: {}/{}-------------------------------------------\n".format(epoch, n_epochs))
-        loss_file.write("Train -> Loss: {:.15f} Acc: {:.15f}\n".format(train_loss, train_acc))
-        loss_file.write("Test  -> Loss: {:.15f} Acc: {:.15f}\n".format(valid_loss, valid_acc))
+        loss_file.write("Train    -> Loss: {:.15f} Acc: {:.15f}\n".format(train_loss, train_acc))
+        loss_file.write("Valid{} -> Loss: {:.15f} Acc: {:.15f}\n".format(test_idx, valid_loss, valid_acc))
         
         print('Epoch: {}/{}-------------------------------------------'.format(epoch, n_epochs))
-        print("Train -> Loss: {:.15f} Acc: {:.15f}".format(train_loss, train_acc))
-        print("Valid -> Loss: {:.15f} Acc: {:.15f}".format(valid_loss, valid_acc))
+        print("Train    -> Loss: {:.15f} Acc: {:.15f}".format(train_loss, train_acc))
+        print("Valid{} -> Loss: {:.15f} Acc: {:.15f}\n".format(test_idx, valid_loss, valid_acc))
         
         if train_loss < best_loss:
             state = { 'epoch': epoch + 1, 'state_dict': model.state_dict(),
