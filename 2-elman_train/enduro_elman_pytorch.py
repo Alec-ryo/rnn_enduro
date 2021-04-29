@@ -9,16 +9,9 @@ from enduro_lstm import *
 import matplotlib.pyplot as plt
 import time
 
-use_gpu = input("Use GPU (y/n) ")
-if use_gpu == 'y':
-    use_gpu = True
-else:
-    use_gpu = False
+device = conf_cuda(True)
 
-device = conf_cuda(use_gpu)
-
-if use_gpu:
-    torch.cuda.empty_cache()
+torch.cuda.empty_cache()
 
 obs = 'play'
 if obs == 'zigzag':
@@ -70,22 +63,19 @@ for m in range(start_match, end_match + 1):
     num_of_frames_arr.append(end_frame - start_frame + 1) 
     
 
-data = np.array(frames_arr)/255
-targets = np.array(actions_arr)
+X_train = np.array(frames_arr)/255
+Y_train = np.array(actions_arr)
 num_of_frames = np.array(num_of_frames_arr)
 
-data = torch.tensor(data).float()
-targets = torch.tensor(targets).float()
-
-all_idx = np.arange(len(data))
+X_train = torch.tensor(X_train).float()
+Y_train = torch.tensor(Y_train).float()
 
 model = Model(device=device, input_size=20400, output_size=len(ACTIONS_LIST), hidden_dim=hidden_neurons, n_layers=1)
 
 # We'll also set the model to the device that we defined earlier (default is CPU)
-if use_gpu:
-    model.cuda()
-    data = data.cuda() 
-    targets = targets.cuda()
+model.cuda()
+X_train = X_train.cuda() 
+Y_train = Y_train.cuda()
 
 min_loss = 1e-05
 # Define Loss, Optimizer
@@ -93,10 +83,8 @@ criterion = nn.MSELoss()
 # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 optimizer = torch.optim.Adam(model.parameters())
 
-train_loss_arr = np.array([])
-train_acc_arr = np.array([])
-test_loss_arr = np.array([])
-test_acc_arr = np.array([])
+loss_arr = np.array([])
+acc_arr = np.array([])
 
 # Training Run
 
@@ -108,71 +96,45 @@ best_loss = 1
 
 start_time_processing = time.time()
 for epoch in range(1, n_epochs + 1):
-
-    model.train()
-
-    train_idx = np.random.choice(len(data), len(data) - 1, replace=False)
-    test_idx = np.setdiff1d(all_idx, train_idx)
-
-    X_train = data[train_idx]
-    Y_train = targets[train_idx]
-    X_test = data[test_idx]
-    Y_test = targets[test_idx]
-
     optimizer.zero_grad() # Clears existing gradients from previous epoch
     X_train.to(device)
     output, hidden = model(X_train)
     loss = criterion(output, Y_train.view(-1,len(ACTIONS_LIST)).float())
     loss.backward() # Does backpropagation and calculates gradients
     optimizer.step() # Updates the weights accordinglyw
-        
+    
     if epoch%10 == 0:
-
-        train_loss = loss.item()
-        train_acc = float(torch.sum((torch.argmax(output, axis=1) == torch.argmax(Y_train.reshape(-1, len(ACTIONS_LIST)), axis=1).int())/num_of_frames.sum()))
-
-        model.eval()
+        acc = float(torch.sum((torch.argmax(output, axis=1) == torch.argmax(Y_train.reshape(-1, len(ACTIONS_LIST)), axis=1).int())/num_of_frames.sum()))
         
-        output, hidden = model(X_test)
-        loss = criterion(output, Y_test.view(-1,len(ACTIONS_LIST)).float())
+        loss_file.write("Epoch: {}/{}.............".format(epoch, n_epochs))
+        loss_file.write("Loss: {:.15f} Acc: {:.15f}\n".format(loss.item(), acc))
         
-        valid_loss = loss.item()    
-        valid_acc = float(torch.sum((torch.argmax(output, axis=1) == torch.argmax(Y_test.reshape(-1, len(ACTIONS_LIST)), axis=1).int())/num_of_frames.sum()))
+        print('Epoch: {}/{}.............'.format(epoch, n_epochs), end=' ')
+        print("Loss: {:.15f} Acc: {:.15f}".format(loss.item(), acc))
         
-        loss_file.write("Epoch: {}/{}-------------------------------------------\n".format(epoch, n_epochs))
-        loss_file.write("Train -> Loss: {:.15f} Acc: {:.15f}\n".format(train_loss, train_acc))
-        loss_file.write("Test  -> Loss: {:.15f} Acc: {:.15f}\n".format(valid_loss, valid_acc))
-        
-        print('Epoch: {}/{}-------------------------------------------'.format(epoch, n_epochs))
-        print("Train -> Loss: {:.15f} Acc: {:.15f}".format(train_loss, train_acc))
-        print("Valid -> Loss: {:.15f} Acc: {:.15f}".format(valid_loss, valid_acc))
-        
-        if train_loss < best_loss:
+        if loss.item() < best_loss:
             state = { 'epoch': epoch + 1, 'state_dict': model.state_dict(),
                       'optimizer': optimizer.state_dict(), 'losslogger': loss.item(), }
             torch.save(state, newpath + '/' + model_name)
             best_loss = loss.item()
 
-        train_loss_arr = np.append(train_loss_arr, train_loss)
-        train_acc_arr = np.append(train_acc_arr, train_acc)
-        test_loss_arr = np.append(test_loss_arr, valid_loss)
-        test_acc_arr = np.append(test_acc_arr, valid_acc)
+        loss_arr = np.append(loss_arr, loss.item())
+        acc_arr = np.append(loss_arr, loss.item())
         
-        if (valid_loss < min_loss):
+        if (acc_arr[-1] - acc > 0.2) or (loss.item() < min_loss):
             break
         
 loss_file.close()
-np.savez(newpath + '/' + "train_loss_arr", train_loss_arr)
-np.savez(newpath + '/' + "test_loss_arr", test_loss_arr)
+np.savez(newpath + '/' + "loss_arr", loss_arr)
 print("--- %s seconds ---" % (time.time() - start_time_processing))
 
 # summarize history for loss
-plt.plot(train_loss_arr, color='blue')
-plt.plot(test_loss_arr, color='red')
+g = list(loss_arr)
+plt.plot(loss_arr)
 plt.title('model loss')
 plt.ylabel('loss')
 plt.xlabel('epoch')
-plt.legend(['train','test'], loc='upper left')
+plt.legend(['train'], loc='upper left')
 plt.yscale('log')
-plt.savefig(newpath + '/' + 'loss.png')
+plt.savefig(newpath + '/' + 'perf.png')
 plt.show()

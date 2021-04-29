@@ -5,11 +5,11 @@ obs = 'play';
 num_epochs = 5000;
 num_hidden_layer = 200;
 
-start_match = 49;
-end_match = 49;
+start_match = 45;
+end_match = 45;
 
 start_frame = 1;
-end_frame = 1000;
+end_frame = 4500;
 
 use_gpu = false
 

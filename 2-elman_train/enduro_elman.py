@@ -54,27 +54,19 @@ def prepare_action_data(action, ACTIONS_LIST):
     return new_action
 
 class Model(nn.Module):
-    def __init__(self, device, input_size, output_size, hidden_dim, n_layers):
+    def __init__(self, input_size, output_size, hidden_dim, n_layers):
         super(Model, self).__init__()
-        
-        self.device = device
 
         # Defining some parameters
         self.hidden_dim = hidden_dim
         self.n_layers = n_layers
 
-        # self.h0 = torch.zeros(self.n_layers, 1, self.hidden_dim).to(self.device)
-        # self.c0 = torch.zeros(self.n_layers, 1, self.hidden_dim).to(self.device)
-
-        self.init_hidden(1)
-
         #Defining the layers
         # RNN Layer
-        self.lstm = nn.LSTM(input_size, hidden_dim, n_layers, batch_first=True)  
-        
+        self.rnn = nn.RNN(input_size, hidden_dim, n_layers, batch_first=True)   
         # Fully connected layer
         self.fc = nn.Linear(hidden_dim, output_size)
-        
+
         self.sigmoid = nn.Sigmoid()
     
     def forward(self, x):
@@ -82,37 +74,28 @@ class Model(nn.Module):
         batch_size = x.size(0)
 
         # Initializing hidden state for first input using method defined below
-        # hidden = self.init_hidden(batch_size)
-        # self.h0 = torch.zeros(self.n_layers, batch_size, self.hidden_dim).to(self.device)
-        # self.c0 = torch.zeros(self.n_layers, batch_size, self.hidden_dim).to(self.device)
-
-        self.init_hidden(batch_size)
+        hidden = self.init_hidden(batch_size)
 
         # Passing in the input and hidden state into the model and obtaining outputs
-        out, hidden = self.lstm(x, (self.h0, self.c0))
+        out, hidden = self.rnn(x, hidden)
         
         # Reshaping the outputs such that it can be fit into the fully connected layer
         out = out.contiguous().view(-1, self.hidden_dim)
         out = self.fc(out)
-        
+
         out = self.sigmoid(out)
         
         return out, hidden
-
-    def init_hidden(self, batch_size):
-
-        if self.device.type == 'cuda':
-            self.h0 = torch.zeros(self.n_layers, batch_size, self.hidden_dim).to(self.device)
-            self.c0 = torch.zeros(self.n_layers, batch_size, self.hidden_dim).to(self.device)
-        else:
-            self.h0 = torch.zeros(self.n_layers, batch_size, self.hidden_dim)
-            self.c0 = torch.zeros(self.n_layers, batch_size, self.hidden_dim)
     
-def conf_cuda(use_cuda):
+    def init_hidden(self, batch_size):
+        # This method generates the first hidden state of zeros which we'll use in the forward pass
+        # We'll send the tensor holding the hidden state to the device we specified earlier as well
+        hidden = torch.zeros(self.n_layers, batch_size, self.hidden_dim)
+        return hidden
+    
+def conf_cuda(use_cuda=True):
     
     if use_cuda:
-
-        print(use_cuda)
         # torch.cuda.is_available() checks and returns a Boolean True if a GPU is available, else it'll return False
         is_cuda = torch.cuda.is_available()
 
@@ -124,6 +107,6 @@ def conf_cuda(use_cuda):
             device = torch.device("cpu")
             print("GPU not available, CPU used")
     else:
-        device = torch.device("cpu")
-        print("Selected CPU")
+            device = torch.device("cpu")
+            print("Selected CPU")
     return device
