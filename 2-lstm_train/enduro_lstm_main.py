@@ -68,24 +68,21 @@ for m in range(start_match, end_match + 1):
     frames_arr.append(frames)
     actions_arr.append(actions)
     num_of_frames_arr.append(end_frame - start_frame + 1) 
-    
 
-data = np.array(frames_arr)/255
-targets = np.array(actions_arr)
-num_of_frames = np.array(num_of_frames_arr)
+X_train = np.array(frames_arr)/255
+Y_train = np.array(actions_arr)
+num_of_frames_arr = np.array(num_of_frames_arr)
 
-data = torch.tensor(data).float()
-targets = torch.tensor(targets).float()
-
-all_idx = np.arange(len(data))
+X_train = torch.tensor(X_train).float()
+Y_train = torch.tensor(Y_train).float()
 
 model = Model(device=device, input_size=20400, output_size=len(ACTIONS_LIST), hidden_dim=hidden_neurons, n_layers=1)
 
 # We'll also set the model to the device that we defined earlier (default is CPU)
 if use_gpu:
     model.cuda()
-    data = data.cuda() 
-    targets = targets.cuda()
+    X_train = X_train.cuda() 
+    Y_train = Y_train.cuda()
 
 min_loss = 1e-05
 # Define Loss, Optimizer
@@ -95,29 +92,22 @@ optimizer = torch.optim.Adam(model.parameters())
 
 train_loss_arr = np.array([])
 train_acc_arr = np.array([])
-test_loss_arr = np.array([])
-test_acc_arr = np.array([])
+valid_loss_arr = np.array([])
+valid_acc_arr = np.array([])
+valid_loss_mean_arr = np.array([])
+valid_acc_mean_arr = np.array([])
 
 # Training Run
-
-epoch = 1
 loss_file = open(newpath + '/' + "loss_file.txt", "w")
 first_time = True
 
 best_loss = 1
+first_epoch = True
 
 start_time_processing = time.time()
 for epoch in range(1, n_epochs + 1):
 
     model.train()
-
-    train_idx = np.random.choice(len(data), len(data) - 1, replace=False)
-    test_idx = np.setdiff1d(all_idx, train_idx)
-
-    X_train = data[train_idx]
-    Y_train = targets[train_idx]
-    X_test = data[test_idx]
-    Y_test = targets[test_idx]
 
     optimizer.zero_grad() # Clears existing gradients from previous epoch
     X_train.to(device)
@@ -128,51 +118,79 @@ for epoch in range(1, n_epochs + 1):
         
     if epoch%10 == 0:
 
-        train_loss = loss.item()
-        train_acc = float(torch.sum((torch.argmax(output, axis=1) == torch.argmax(Y_train.reshape(-1, len(ACTIONS_LIST)), axis=1).int())/num_of_frames.sum()))
-
+        train_loss_arr = np.append(train_loss_arr, loss.item())
+        train_acc_arr  = np.append(train_acc_arr, get_acc(output, Y_train.reshape(-1, len(ACTIONS_LIST))))
+    
         model.eval()
         
-        output, hidden = model(X_test)
-        loss = criterion(output, Y_test.view(-1,len(ACTIONS_LIST)).float())
-        
-        valid_loss = loss.item()    
-        valid_acc = float(torch.sum((torch.argmax(output, axis=1) == torch.argmax(Y_test.reshape(-1, len(ACTIONS_LIST)), axis=1).int())/num_of_frames.sum()))
+        epoch_valid_losses = np.array([])
+        epoch_valid_acc = np.array([])
+        for seq in range(len(X_train)):
+            output, hidden = model(torch.unsqueeze(X_train[seq], 1))
+            loss = criterion(output, Y_train[seq].view(-1,len(ACTIONS_LIST)).float())
+            epoch_valid_losses = np.append(epoch_valid_losses, loss.item())
+            epoch_valid_acc = np.append( epoch_valid_acc, get_acc(output, Y_train[seq].reshape(-1, len(ACTIONS_LIST))) )
+            
+        if first_epoch:
+            valid_loss_arr = epoch_valid_losses.reshape(-1, 1)
+            valid_acc_arr = epoch_valid_acc.reshape(-1, 1)
+            first_epoch = False
+        else:
+            valid_loss_arr = np.insert(valid_loss_arr, valid_loss_arr.shape[1], epoch_valid_losses, axis=1)
+            valid_acc_arr = np.insert(valid_acc_arr, valid_acc_arr.shape[1], epoch_valid_acc, axis=1)
+            
+        valid_loss_mean_arr = np.append(valid_loss_mean_arr, np.mean(epoch_valid_losses))
+        valid_acc_mean_arr = np.append(valid_acc_mean_arr, np.mean(epoch_valid_acc))
         
         loss_file.write("Epoch: {}/{}-------------------------------------------\n".format(epoch, n_epochs))
-        loss_file.write("Train    -> Loss: {:.15f} Acc: {:.15f}\n".format(train_loss, train_acc))
-        loss_file.write("Valid{} -> Loss: {:.15f} Acc: {:.15f}\n".format(test_idx, valid_loss, valid_acc))
+        loss_file.write("Train -> Loss: {:.15f} Acc: {:.15f}\n".format(train_loss_arr[-1], train_acc_arr[-1]))
+        loss_file.write("Valid -> Loss: {:.15f} Acc: {:.15f}\n".format(valid_loss_mean_arr[-1], valid_acc_mean_arr[-1]))
+            
+        print("Epoch: {}/{}-------------------------------------------".format(epoch, n_epochs))
+        print("Train -> Loss: {:.15f} Acc: {:.15f}".format(train_loss_arr[-1], train_acc_arr[-1]))
+        print("Valid -> Loss: {:.15f} Acc: {:.15f}".format(valid_loss_mean_arr[-1], valid_acc_mean_arr[-1]))
         
-        print('Epoch: {}/{}-------------------------------------------'.format(epoch, n_epochs))
-        print("Train    -> Loss: {:.15f} Acc: {:.15f}".format(train_loss, train_acc))
-        print("Valid{} -> Loss: {:.15f} Acc: {:.15f}\n".format(test_idx, valid_loss, valid_acc))
-        
-        if train_loss < best_loss:
+        if train_loss_arr[-1] < best_loss:
             state = { 'epoch': epoch + 1, 'state_dict': model.state_dict(),
                       'optimizer': optimizer.state_dict(), 'losslogger': loss.item(), }
             torch.save(state, newpath + '/' + model_name)
             best_loss = loss.item()
-
-        train_loss_arr = np.append(train_loss_arr, train_loss)
-        train_acc_arr = np.append(train_acc_arr, train_acc)
-        test_loss_arr = np.append(test_loss_arr, valid_loss)
-        test_acc_arr = np.append(test_acc_arr, valid_acc)
+        else:
+            print("model not saved")
         
-        if (valid_loss < min_loss):
+        if (valid_loss_mean_arr[-1] < min_loss):
             break
         
 loss_file.close()
 np.savez(newpath + '/' + "train_loss_arr", train_loss_arr)
-np.savez(newpath + '/' + "test_loss_arr", test_loss_arr)
+np.savez(newpath + '/' + "valid_loss_arr", valid_loss_arr)
+np.savez(newpath + '/' + "valid_loss_mean_arr", valid_loss_mean_arr)
 print("--- %s seconds ---" % (time.time() - start_time_processing))
 
 # summarize history for loss
 plt.plot(train_loss_arr, color='blue')
-plt.plot(test_loss_arr, color='red')
-plt.title('model loss')
+plt.title('model train loss')
 plt.ylabel('loss')
 plt.xlabel('epoch')
-plt.legend(['train','test'], loc='upper left')
+plt.legend(['train'], loc='upper left')
 plt.yscale('log')
-plt.savefig(newpath + '/' + 'loss.png')
-plt.show()
+plt.savefig(newpath + '/' + 'train_loss.png')
+
+# summarize history for loss
+plt.plot(valid_loss_mean_arr, color='blue')
+plt.title('model valid loss')
+plt.ylabel('loss')
+plt.xlabel('epoch')
+plt.legend(['valid'], loc='upper left')
+plt.yscale('log')
+plt.savefig(newpath + '/' + 'valid_loss_mean.png')
+
+for seq in range(len(X_train)):
+    # summarize history for loss
+    plt.plot(valid_loss_arr[seq], color='blue')
+    plt.title('model valid loss ' + str(seq))
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['valid'], loc='upper left')
+    plt.yscale('log')
+    plt.savefig(newpath + '/' + f'valid_loss_{seq}.png')

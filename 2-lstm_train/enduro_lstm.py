@@ -111,8 +111,7 @@ class Model(nn.Module):
 def conf_cuda(use_cuda):
     
     if use_cuda:
-
-        print(use_cuda)
+        
         # torch.cuda.is_available() checks and returns a Boolean True if a GPU is available, else it'll return False
         is_cuda = torch.cuda.is_available()
 
@@ -127,3 +126,13 @@ def conf_cuda(use_cuda):
         device = torch.device("cpu")
         print("Selected CPU")
     return device
+
+def get_acc(predicted, target):
+    
+    predicted = torch.argmax(predicted, axis=1)
+    target = torch.argmax(target, axis=1)
+    
+    correct = torch.sum(predicted == target)
+    
+    acc = correct/predicted.shape[0]
+    return float(acc)
