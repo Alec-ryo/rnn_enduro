@@ -81,8 +81,8 @@ model = Model(device=device, input_size=20400, output_size=len(ACTIONS_LIST), hi
 # We'll also set the model to the device that we defined earlier (default is CPU)
 if use_gpu:
     model.cuda()
-    """X_train = X_train.cuda() 
-    Y_train = Y_train.cuda()"""
+    X_train = X_train.cuda() 
+    Y_train = Y_train.cuda()
 
 min_loss = 1e-05
 # Define Loss, Optimizer
@@ -109,20 +109,12 @@ for epoch in range(1, n_epochs + 1):
 
     model.train()
 
-    optimizer.zero_grad() # Clears existing gradients from previous epoch
-    
-    for step_idx in range(len(X_train)):
-    
-        if use_gpu:
-            X_train_batch = X_train[step_idx].cuda() 
-            Y_train_batch = Y_train[step_idx].cuda()
-        else:
-            X_train_batch = X_train[step_idx]
-            Y_train_batch = Y_train[step_idx]
-        output, hidden = model(X_train_batch.reshape(1, X_train.shape[1], X_train.shape[2]))
-        loss = criterion(output, Y_train_batch[step_idx].view(-1,len(ACTIONS_LIST)).float())
-        loss.backward() # Does backpropagation and calculates gradients
-        optimizer.step() # Updates the weights accordinglyw
+    optimizer.zero_grad()
+    # X_train.to(device)
+    output, hidden = model(X_train)
+    loss = criterion(output, Y_train.view(-1,len(ACTIONS_LIST)).float())
+    loss.backward() # Does backpropagation and calculates gradients
+    optimizer.step() # Updates the weights accordinglyw
             
     if epoch%10 == 0:
 
