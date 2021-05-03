@@ -109,13 +109,13 @@ for epoch in range(1, n_epochs + 1):
 
     model.train()
 
-    optimizer.zero_grad()
-    # X_train.to(device)
+    optimizer.zero_grad() # Clears existing gradients from previous epoch
+    X_train.to(device)
     output, hidden = model(X_train)
     loss = criterion(output, Y_train.view(-1,len(ACTIONS_LIST)).float())
     loss.backward() # Does backpropagation and calculates gradients
     optimizer.step() # Updates the weights accordinglyw
-            
+        
     if epoch%10 == 0:
 
         train_loss_arr = np.append(train_loss_arr, loss.item())
@@ -130,7 +130,7 @@ for epoch in range(1, n_epochs + 1):
             loss = criterion(output, Y_train[seq].view(-1,len(ACTIONS_LIST)).float())
             epoch_valid_losses = np.append(epoch_valid_losses, loss.item())
             epoch_valid_acc = np.append( epoch_valid_acc, get_acc(output, Y_train[seq].reshape(-1, len(ACTIONS_LIST))) )
-        """    
+            
         if first_epoch:
             valid_loss_arr = epoch_valid_losses.reshape(-1, 1)
             valid_acc_arr = epoch_valid_acc.reshape(-1, 1)
@@ -138,7 +138,7 @@ for epoch in range(1, n_epochs + 1):
         else:
             valid_loss_arr = np.insert(valid_loss_arr, valid_loss_arr.shape[1], epoch_valid_losses, axis=1)
             valid_acc_arr = np.insert(valid_acc_arr, valid_acc_arr.shape[1], epoch_valid_acc, axis=1)
-        """    
+            
         valid_loss_mean_arr = np.append(valid_loss_mean_arr, np.mean(epoch_valid_losses))
         valid_acc_mean_arr = np.append(valid_acc_mean_arr, np.mean(epoch_valid_acc))
         
@@ -152,7 +152,7 @@ for epoch in range(1, n_epochs + 1):
         
         if train_loss_arr[-1] < best_loss:
             state = { 'epoch': epoch + 1, 'state_dict': model.state_dict(),
-                    'optimizer': optimizer.state_dict(), 'losslogger': loss.item(), }
+                      'optimizer': optimizer.state_dict(), 'losslogger': loss.item(), }
             torch.save(state, newpath + '/' + model_name)
             best_loss = loss.item()
         else:
@@ -160,7 +160,7 @@ for epoch in range(1, n_epochs + 1):
         
         if (valid_loss_mean_arr[-1] < min_loss):
             break
-            
+        
 loss_file.close()
 np.savez(newpath + '/' + "train_loss_arr", train_loss_arr)
 np.savez(newpath + '/' + "valid_loss_arr", valid_loss_arr)
@@ -168,6 +168,7 @@ np.savez(newpath + '/' + "valid_loss_mean_arr", valid_loss_mean_arr)
 print("--- %s seconds ---" % (time.time() - start_time_processing))
 
 # summarize history for loss
+plt.clf()
 plt.plot(train_loss_arr, color='blue')
 plt.title('model train loss')
 plt.ylabel('loss')
@@ -177,6 +178,7 @@ plt.yscale('log')
 plt.savefig(newpath + '/' + 'train_loss.png')
 
 # summarize history for loss
+plt.clf()
 plt.plot(valid_loss_mean_arr, color='blue')
 plt.title('model valid loss')
 plt.ylabel('loss')
@@ -187,6 +189,7 @@ plt.savefig(newpath + '/' + 'valid_loss_mean.png')
 
 for seq in range(len(X_train)):
     # summarize history for loss
+    plt.clf()
     plt.plot(valid_loss_arr[seq], color='blue')
     plt.title('model valid loss ' + str(seq))
     plt.ylabel('loss')
