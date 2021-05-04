@@ -1,4 +1,4 @@
-model_path = 'models/playM45to45F1to1000Epoch5000H200/new_model.mat';
+model_path = 'models/play_45to49f_1to1000epoch10000h_500/playm_45to49f_1to1000epoch_10000h_500.mat';
 load(model_path);
 
 is_checkpoint = false;

@@ -5,9 +5,12 @@ def sigmoid(X):
     return 1/(1+np.exp(-X))
 
 class LoadElman():
-    def __init__(self, model_path):
+    def __init__(self, model_path, checkpoint):
         data = loadmat(model_path, matlab_compatible=False, struct_as_record=False)
-        net = data['net'][0][0]
+        if checkpoint:
+            net = data['checkpoint'][0][0].net[0][0]
+        else:
+            net = data['net'][0][0]
         self.net = net
         
         self.U  = net.IW[0][0]
