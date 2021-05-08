@@ -75,7 +75,7 @@ class Model(nn.Module):
         # Fully connected layer
         self.fc = nn.Linear(hidden_dim, output_size)
         
-        self.sigmoid = nn.Sigmoid()
+        self.softmax = nn.Softmax()
     
     def forward(self, x):
         
@@ -95,7 +95,7 @@ class Model(nn.Module):
         out = out.contiguous().view(-1, self.hidden_dim)
         out = self.fc(out)
         
-        out = self.sigmoid(out)
+        out = self.softmax(out)
         
         return out, hidden
 
