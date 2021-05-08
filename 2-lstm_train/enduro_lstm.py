@@ -54,7 +54,7 @@ def prepare_action_data(action, ACTIONS_LIST):
     return new_action
 
 class Model(nn.Module):
-    def __init__(self, device, input_size, output_size, hidden_dim, n_layers):
+    def __init__(self, device, input_size, output_size, hidden_dim, n_layers, is_softmax):
         super(Model, self).__init__()
         
         self.device = device
@@ -75,7 +75,10 @@ class Model(nn.Module):
         # Fully connected layer
         self.fc = nn.Linear(hidden_dim, output_size)
         
-        self.softmax = nn.Softmax()
+        if is_softmax:
+            self.out = nn.Softmax()
+        else:
+            self.out = nn.Sigmoid()
     
     def forward(self, x):
         
@@ -95,7 +98,7 @@ class Model(nn.Module):
         out = out.contiguous().view(-1, self.hidden_dim)
         out = self.fc(out)
         
-        out = self.softmax(out)
+        out = self.out(out)
         
         return out, hidden
 
