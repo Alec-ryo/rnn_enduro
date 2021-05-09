@@ -1,6 +1,6 @@
 %-------------- Configuracao ---------------%
 mod = false;
-obs = 'play';
+obs = 'crop';
 
 num_epochs = 10000;
 num_hidden_layer = 200;
@@ -11,7 +11,7 @@ end_match = 50;
 start_frame = 1;
 end_frame = 1000;
 
-use_gpu = false
+use_gpu = false;
 
 %----------- Cria nome do modelo -----------%
 if mod
@@ -51,7 +51,9 @@ for m = start_match:end_match
 
     X_sample = {};
     for k = start_frame:end_frame
-        imageData = reshape(frames(k,:,:), [], 1);
+        imageData = reshape(frames(k,:,:), 170, 120);
+        imageData = imageData(30:129, :);
+        imageData = reshape(imageData, [], 1);
         X_sample = [X_sample, imageData/255];
     end
 
