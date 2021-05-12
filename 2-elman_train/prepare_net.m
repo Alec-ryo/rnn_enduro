@@ -8,7 +8,6 @@ function net = prepare_net(num_back, num_hidden_layers, num_epochs, mod)
     net.outputs{1,2}.processFcns={};
     
     if mod
-        net.layers{1,1}.transferFcn='poslin';
         net.layers{2,1}.transferFcn='softmax';
     else
         for i=1:net.numLayers

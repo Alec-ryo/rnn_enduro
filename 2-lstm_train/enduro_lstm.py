@@ -1,6 +1,8 @@
 import numpy as np
 import torch
 import torch.nn as nn
+from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence, pad_packed_sequence
+from torch.autograd import Variable
 
 def get_actions_list(zigzag=False):
     
@@ -60,13 +62,14 @@ class Model(nn.Module):
         self.device = device
 
         # Defining some parameters
+        self.input_size = input_size
         self.hidden_dim = hidden_dim
         self.n_layers = n_layers
 
         # self.h0 = torch.zeros(self.n_layers, 1, self.hidden_dim).to(self.device)
         # self.c0 = torch.zeros(self.n_layers, 1, self.hidden_dim).to(self.device)
 
-        self.init_hidden(1)
+        self.init_hidden()
 
         #Defining the layers
         # RNN Layer
@@ -82,34 +85,45 @@ class Model(nn.Module):
     
     def forward(self, x):
         
-        batch_size = x.size(0)
+        # batch_size = x.size(0)
+        batch_size = 1
 
         # Initializing hidden state for first input using method defined below
         # hidden = self.init_hidden(batch_size)
         # self.h0 = torch.zeros(self.n_layers, batch_size, self.hidden_dim).to(self.device)
         # self.c0 = torch.zeros(self.n_layers, batch_size, self.hidden_dim).to(self.device)
 
-        self.init_hidden(batch_size)
+        hidden = self.init_hidden()
 
         # Passing in the input and hidden state into the model and obtaining outputs
-        out, hidden = self.lstm(x, (self.h0, self.c0))
+        # out, hidden = self.lstm(x)
+        
+        pad_embed_pack_lstm = self.lstm(x, hidden)
+        pad_embed_pack_lstm_pad = pad_packed_sequence(pad_embed_pack_lstm[0], batch_first=True)
+        
+        outs, lens = pad_embed_pack_lstm_pad
         
         # Reshaping the outputs such that it can be fit into the fully connected layer
-        out = out.contiguous().view(-1, self.hidden_dim)
+        out = outs.contiguous().view(-1, self.hidden_dim)
         out = self.fc(out)
         
         out = self.out(out)
         
-        return out, hidden
-
-    def init_hidden(self, batch_size):
+        return out
+        
+    def init_hidden(self):
+        # the weights are of the form (nb_layers, batch_size, nb_lstm_units)
+        hidden_a = torch.randn(1, self.input_size, self.hidden_dim)
+        hidden_b = torch.randn(1, self.input_size, self.hidden_dim)
 
         if self.device.type == 'cuda':
-            self.h0 = torch.zeros(self.n_layers, batch_size, self.hidden_dim).to(self.device)
-            self.c0 = torch.zeros(self.n_layers, batch_size, self.hidden_dim).to(self.device)
-        else:
-            self.h0 = torch.zeros(self.n_layers, batch_size, self.hidden_dim)
-            self.c0 = torch.zeros(self.n_layers, batch_size, self.hidden_dim)
+            hidden_a = hidden_a.cuda()
+            hidden_b = hidden_b.cuda()
+
+        hidden_a = Variable(hidden_a)
+        hidden_b = Variable(hidden_b)
+
+        return (hidden_a, hidden_b)
     
 def conf_cuda(use_cuda):
     

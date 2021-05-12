@@ -1,8 +1,8 @@
 %-------------- Configuracao ---------------%
-mod = false;
-obs = 'play';
+mod = true;
+obs = 'relu_softmax';
 
-num_epochs = 10000;
+num_epochs = 5000;
 num_hidden_layer = 500;
 
 start_match = 45;
@@ -11,7 +11,7 @@ end_match = 50;
 start_frame = 1;
 end_frame = 1000;
 
-use_gpu = false
+use_gpu = false;
 
 %----------- Cria nome do modelo -----------%
 if mod
