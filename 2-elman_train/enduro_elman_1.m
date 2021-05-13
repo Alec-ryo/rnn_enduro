@@ -2,11 +2,11 @@
 mod = false;
 obs = 'chuncked';
 
-num_epochs = 10000;
+num_epochs = 5000;
 num_hidden_layer = 200;
 
 start_match = 45;
-end_match = 46;
+end_match = 50;
 
 start_frame = 1;
 end_frame = 1020;
@@ -124,6 +124,9 @@ for m = start_match:end_match
         end
     end
 end
+
+del X_sample;
+del Y_sample;
 
 disp('preparing network');
 net = prepare_net(1, num_hidden_layer, num_epochs, mod);
