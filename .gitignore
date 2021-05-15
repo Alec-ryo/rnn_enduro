@@ -6,3 +6,4 @@ data
 *.npz
 adapted_model
 *.mat
+best_models
