@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence, pad_packed_sequence
 from torch.autograd import Variable
+import torch.nn.functional as F
 
 def get_actions_list(zigzag=False):
     
@@ -55,9 +56,9 @@ def prepare_action_data(action, ACTIONS_LIST):
 
     return new_action
 
-class Model(nn.Module):
+class LSTMModel(nn.Module):
     def __init__(self, device, input_size, output_size, hidden_dim, n_layers, is_softmax):
-        super(Model, self).__init__()
+        super(LSTMModel, self).__init__()
         
         self.device = device
 
@@ -124,6 +125,28 @@ class Model(nn.Module):
         hidden_b = Variable(hidden_b)
 
         return (hidden_a, hidden_b)
+
+class ConvNet(nn.Module):
+    def __init__(self):
+        super(ConvNet, self).__init__()
+        self.conv1 = nn.Conv2d(1, 500, 5)
+        self.pool = nn.MaxPool2d(3, 3)
+        self.conv2 = nn.Conv2d(500, 200, 5)
+        self.fc1 = nn.Linear(200*5*5, 120)
+        self.fc2 = nn.Linear(120, 84)
+        self.fc3 = nn.Linear(84, 9)
+        self.softmax = nn.Softmax()
+
+    def forward(self, x):
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = x.view(-1, 200*5*5)
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.fc3(x)
+        x = self.softmax(x)
+
+        return x
     
 def conf_cuda(use_cuda):
     

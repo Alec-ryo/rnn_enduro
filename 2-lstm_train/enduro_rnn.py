@@ -55,9 +55,9 @@ def prepare_action_data(action, ACTIONS_LIST):
 
     return new_action
 
-class Model1(nn.Module):
+class RNNModel(nn.Module):
     def __init__(self, device, input_size, output_size, hidden_dim, n_layers, is_softmax):
-        super(Model1, self).__init__()
+        super(RNNModel, self).__init__()
         
         self.device = device
 
