@@ -6,7 +6,7 @@ from PIL import Image
 from scipy.io import savemat
 import keyboard
 
-sleep_time = 0.05
+sleep_time = 0.1
 path = "data/"
 
 def prepare_folder(PATH):
@@ -106,7 +106,7 @@ shape_of_single_frame = (1, (y_max-y_min),(x_max-x_min))
 
 match_buffer = []
 pil_buffer = []
-frame_buffer = np.empty((0, 20400), dtype=np.double)
+frame_buffer = np.empty((0, y_max-y_min, x_max-x_min), dtype=np.double)
 action_buffer = np.empty((0,1), dtype=int) 
 reward_buffer = np.empty((0,1), dtype=np.double)
 life_buffer = np.empty((0,1), dtype=np.double)
@@ -135,7 +135,7 @@ for _ in range(num_frames):
     pil_buffer.append(frame)
     
     frame = np.asarray(frame)
-    frame = frame.reshape(1,20400)
+    frame = frame.reshape(1, y_max-y_min, x_max-x_min)
 
     frame_buffer = np.concatenate(( frame_buffer, frame ))
     reward_buffer = np.append(reward_buffer, np.array(reward))
@@ -149,11 +149,7 @@ match_path, img_path, npz_path, mat_path = prepare_folder(path)
 
 match_buffer = [action_buffer.shape[0], frame_buffer, action_buffer, reward_buffer, life_buffer]
 
-if input('Do you want to save data as npz (y/n)? ')=='y':
-    save_as_npz(npz_path)
-if input('Do you want to save data as png (y/n)? ')=='y':
-    save_as_png(img_path, pil_buffer)
-if input('Do you want to save actions as txt (y/n)? ')=='y':
-    save_actions_as_txt(mat_path, action_buffer)
-if input('Do you want to save data as mat (y/n)? ')=='y':
-    save_as_matfile(mat_path, match_buffer)
+save_as_npz(npz_path)
+save_as_png(img_path, pil_buffer)
+save_actions_as_txt(mat_path, action_buffer)
+save_as_matfile(mat_path, match_buffer)
