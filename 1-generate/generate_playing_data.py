@@ -6,7 +6,7 @@ from PIL import Image
 from scipy.io import savemat
 import keyboard
 
-sleep_time = 0.1
+sleep_time = 0.05
 path = "data/"
 
 def prepare_folder(PATH):
@@ -117,13 +117,16 @@ env = gym.make("Enduro-v0")
 frame = env.reset()
 reward, action, done, info = 0, 0, False, {'ale.lives': 0}
 
-for _ in range(num_frames):
+for i in range(num_frames):
 
     if keyboard.is_pressed('p'):
         time.sleep(0.01)
         while(not(keyboard.is_pressed('p'))):
             pass
-    time.sleep(sleep_time)
+    
+    print(i)
+    if i < num_frames/2:
+        time.sleep(sleep_time)
     env.render()
     action = control()
 
@@ -143,7 +146,6 @@ for _ in range(num_frames):
     action_buffer = np.append(action_buffer, np.array(action))
 
     frame, reward, done, info = env.step(action)
-
 
 match_path, img_path, npz_path, mat_path = prepare_folder(path)
 
