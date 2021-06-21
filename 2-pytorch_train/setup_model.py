@@ -23,9 +23,6 @@ class ModelStructure():
         self.type = self.set_type_name()
         self.name = self.setName()
         self.path = self.setPath()
-        self.criterion = nn.MSELoss()
-        self.model = self.set_model()
-        self.optimizer = torch.optim.Adam(self.model.parameters())
 
     def set_type_name(self):
         print("Choose type of RNN model:")
@@ -41,23 +38,6 @@ class ModelStructure():
             return "CNN"
         else:
             return "Error"
-
-    def set_model(self):
-        
-        if self.type == "RNN":
-            model = RNNModel(device=self.device, input_size=self.data_size, output_size=self.output_size, hidden_dim=self.hidden_neurons, n_layers=1)
-        elif self.type == "LSTM":
-            model = LSTMModel(device=self.device, input_size=self.data_size, output_size=self.output_size, hidden_dim=self.hidden_neurons, n_layers=1)
-        elif self.type == "CNN":
-            # model = CNNModel(device=device, input_size=self.data.data_size, output_size=len(self.data.available_target), hidden_dim=self.hidden_neurons, n_layers=1)
-            pass
-        else:
-            print("ERROR defining Model")
-        
-        if self.device.type == 'cuda':
-            model = model.cuda()
-
-        return model
 
     def setName(self):
         x = [str(num) for num in self.match_list]
