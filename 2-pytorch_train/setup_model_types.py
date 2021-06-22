@@ -26,7 +26,6 @@ class RNNModel(nn.Module):
         pad_embed_pack_lstm_pad = pad_packed_sequence(pad_embed_pack_lstm[0], batch_first=True)
         
         outs, _ = pad_embed_pack_lstm_pad
-        print(outs.shape)
         out = outs.contiguous().view(-1, self.hidden_dim)
         out = self.fc(out)
         
