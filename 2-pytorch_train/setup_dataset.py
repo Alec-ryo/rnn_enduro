@@ -123,11 +123,17 @@ class chunk_dataset(dataset):
     def chunkSequence(self, data, targets):
         data_chunked = []
         target_chunked = []
-        for i in range(len(data)):
-            for j in range(len(self.chunk_idx[i]) - 1):
-                data_chunked.append(data[i][self.chunk_idx[i][j]:self.chunk_idx[i][j+1]])
-                target_chunked.append(targets[i][self.chunk_idx[i][j]:self.chunk_idx[i][j+1]])
+        for m in self.match_list:
+            for j in range(self.getNumberOfMatchChunks(m) - 1):
+                data_chunked.append(data[m-1][self.getChunkIdx(m,j):self.getChunkIdx(m,j+1)])
+                target_chunked.append(targets[m-1][self.getChunkIdx(m,j):self.getChunkIdx(m,j+1)])
         return data_chunked, target_chunked
+
+    def getChunkIdx(self, match, index):
+        return self.chunk_idx[match-1][index]
+
+    def getNumberOfMatchChunks(self, match):
+        return len(self.chunk_idx[match-1])
 
     def toNumpyArray(self, X_train, Y_train):
         X_train = np.array(X_train)
