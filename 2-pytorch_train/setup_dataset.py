@@ -22,7 +22,7 @@ class dataset():
         for m in self.match_list:
             
             _, frames, actions, _, _ = self.load_npz(self.datapath, m)
-            frames = frames[self.start_frame - 1:self.end_frame, 30:130, 10:110]
+            frames = frames[self.start_frame - 1:self.end_frame, 30:130, :]
             actions = actions[self.start_frame - 1:self.end_frame]
             
             action_one_hot = [self.prepare_action_data(i, self.available_targets) for i in actions]

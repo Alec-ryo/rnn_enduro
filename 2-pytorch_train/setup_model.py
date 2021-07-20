@@ -43,7 +43,7 @@ class ModelStructure():
         x = [str(num) for num in self.match_list]
         x = '-'.join(x)
         obs = input("write a observations without space and punctuations:")
-        name = f"{self.type}_{obs}_m{x}_f{self.start_frame}to{self.end_frame}_epoch{self.n_epochs}_H{self.hidden_neurons}"
+        name = f"{self.type}_{obs}_m{x}_f{self.start_frame}to{self.end_frame}_epoch{self.n_epochs}_h{self.hidden_neurons}"
         return name
 
     def setPath(self):

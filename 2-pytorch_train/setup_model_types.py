@@ -92,45 +92,44 @@ class LSTMModel(nn.Module):
         return (hidden_a, hidden_b)
 
 class CNNLSTMModel(nn.Module):
-    def __init__(self, device, input_shape, output_size, hidden_dim, n_layers):
+    def __init__(self, device, input_size, output_size, hidden_dim, n_layers):
         super(CNNLSTMModel, self).__init__()
         
         self.device = device
-        self.lstm_input_shape = input_shape
+
+        self.conv1 = nn.Conv2d(in_channels=1, out_channels=16, kernel_size=(5,5))
+        self.activation = nn.ReLU()
+        #self.bnorm = nn.BatchNorm2d(num_features=16)
+        self.pool = nn.MaxPool2d(kernel_size=(2,2))
+
+        self.input_size = input_size
         self.hidden_dim = hidden_dim
         self.n_layers = n_layers
 
-        self.conv1 = nn.Conv2d(in_channels=1, out_channels=3, kernel_size=(3,3))
-        self.conv2 = nn.Conv2d(3, 3, (10,10))
-        self.activation = nn.ReLU()
-        self.bnorm = nn.BatchNorm2d(num_features=3)
-        self.pool = nn.MaxPool2d(kernel_size=(2,2))
-
         # output = (input - filter + 1) / stride
-        # convolução 1: (100 - 3 + 1) / 1 = 98x98
-        # pooling 1: 49x49
-        # convolução 2: (45 - 10 + 1) / 1 = 36x36
-        # pooling 2: 18x18
-        # 18 * 18 * 3
-        self.init_hidden(49*49*3)
-        self.lstm = nn.LSTM(49*49*3, hidden_dim, n_layers, batch_first=True)  
+        # convolução 1: (100 - 5 + 1) / 1 = 96x96
+        # pooling 1: 48x48
+        self.input_lstm = 48*48*16
+        self.init_hidden(self.input_lstm)
+        self.lstm = nn.LSTM(self.input_lstm, hidden_dim, n_layers, batch_first=True)  
         self.fc = nn.Linear(hidden_dim, output_size)
         self.out = nn.Softmax()
     
-    def forward(self, x):
+    def forward(self, x, seq_len):
+
+        x = pad_sequence(x, batch_first=True).float()
+        original_shape = x.shape
+        x = x.reshape(-1, 1, self.input_size, self.input_size)
         
-        hidden = self.init_hidden(49*49*3)
+        hidden = self.init_hidden(self.input_lstm)
 
-        x.padSequence()
-        original_shape = x.data.shape
-        x.data = x.data.reshape(-1, 1, 100, 100)
-
-        x = self.pool(self.bnorm(self.activation(self.conv1(x))))
-        # x = self.pool(self.bnorm(self.activation(self.conv2(x))))
+        x = self.conv1(x)
+        x = self.activation(x)
+        # x = self.bnorm(x)
+        x = self.pool(x)
 
         x = x.reshape(original_shape[0], original_shape[1], -1)
-        
-        x = pack_padded_sequence(x, data.seq_len, batch_first=True, enforce_sorted=False)
+        x = pack_padded_sequence(x, seq_len, batch_first=True, enforce_sorted=False)
         
         pad_embed_pack_lstm = self.lstm(x, hidden)
         pad_embed_pack_lstm_pad = pad_packed_sequence(pad_embed_pack_lstm[0], batch_first=True)
@@ -145,8 +144,8 @@ class CNNLSTMModel(nn.Module):
         
     def init_hidden(self, input_size):
         # the weights are of the form (nb_layers, batch_size, nb_lstm_units)
-        hidden_a = torch.randn(1, input_size, self.hidden_dim)
-        hidden_b = torch.randn(1, input_size, self.hidden_dim)
+        hidden_a = torch.zeros(1, input_size, self.hidden_dim)
+        hidden_b = torch.zeros(1, input_size, self.hidden_dim)
 
         if self.device.type == 'cuda':
             hidden_a = hidden_a.cuda()
